@@ -217,7 +217,8 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# MNIST training data (download from Kaggle Digit Recognizer)
+# The dataset ships with this repo as data/train.csv.gz, which is tracked.
+# Uncompressed copies are not — they are 77 MB and add nothing.
 data/train.csv
 train.csv
 

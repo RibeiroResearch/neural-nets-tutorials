@@ -1,8 +1,6 @@
 # Neural Network Tutorials
 
-Four tutorials on the same problem — recognizing handwritten MNIST digits —
-written to be read in order. Each step changes **one thing** relative to the one
-before it, so that any difference in the result has a single cause.
+Four tutorials on the same problem: Recognizing handwritten MNIST digits. The best is to read them in order.
 
 | # | Notebook | What changes | Parameters | Validation accuracy |
 |---|---|---|---|---|
@@ -229,22 +227,26 @@ attention distribution.
 Notebook 3, or comfort with PyTorch modules and training loops. The attention
 mathematics is developed from scratch.
 
-## Getting the data
+## The data
 
-All four notebooks read the same file. Download `train.csv` (42,000 labelled 28×28
-images) from the Kaggle
-[Digit Recognizer](https://www.kaggle.com/competitions/digit-recognizer/data)
-competition. Then either:
+Nothing to download. All four notebooks read `data/train.csv.gz`, which ships
+with this repository — 42,000 labelled 28×28 handwritten digits, gzipped to
+8.5 MB. `pandas` reads it compressed, so cloning is the whole setup.
 
-- place it at `data/train.csv` next to the notebooks, or
-- upload it to Google Drive at `MyDrive/digit-recognizer/train.csv` if you are
-  running in Colab.
+The loading cell checks a few other locations too: an uncompressed
+`data/train.csv`, the notebook's own folder, and Google Drive when running
+inside Colab. An existing copy will be found if you have one.
 
-The loading cell searches both locations and mounts Drive only when it is
-actually running inside Colab, so the notebooks work locally and in Colab
-without edits.
+The images come from the MNIST database of handwritten digits, in the CSV
+layout Kaggle's Digit Recognizer uses — one row per image, a `label` column
+followed by `pixel0` through `pixel783`.
 
 ## Running the notebooks
+
+```bash
+git clone https://github.com/RibeiroResearch/neural-nets-tutorials.git
+cd neural-nets-tutorials
+```
 
 ```bash
 pip install numpy pandas matplotlib jupyter
