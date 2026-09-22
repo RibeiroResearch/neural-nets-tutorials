@@ -1,6 +1,6 @@
 # Neural Network Tutorials
 
-Four tutorials on the same problem: Recognizing handwritten MNIST digits. The best is to read them in order.
+Four tutorials, the same problem: Recognizing handwritten MNIST digits. The best is to read them in order.
 
 | # | Notebook | What changes | Parameters | Validation accuracy |
 |---|---|---|---|---|
@@ -13,9 +13,17 @@ Four tutorials on the same problem: Recognizing handwritten MNIST digits. The be
 
 ### 1. From scratch, in NumPy
 
-```
-x (784×1) → linear W¹,b¹ → ReLU → linear W²,b² → softmax → ŷ (10×1)
-```
+$$
+\underbrace{784 \times 1}_{x}
+\;\xrightarrow{\;W^{[1]},\, b^{[1]}\;}\;
+10 \times 1
+\;\xrightarrow{\;\text{ReLU}\;}\;
+10 \times 1
+\;\xrightarrow{\;W^{[2]},\, b^{[2]}\;}\;
+10 \times 1
+\;\xrightarrow{\;\text{softmax}\;}\;
+\underbrace{10 \times 1}_{\hat{y}}
+$$
 
 One hidden layer of 10 ReLU units and a 10-way softmax output, trained by batch
 gradient descent on the cross-entropy loss for 1,000 iterations at a learning
@@ -31,9 +39,23 @@ gradients derived by hand in notebook 1 against what autograd computes.
 
 ### 3. Convolutional network
 
-```
-x (1×28×28) → [conv 3×3, 1→8 → ReLU → maxpool 2] → [conv 3×3, 8→16 → ReLU → maxpool 2] → flatten (784) → linear → ŷ (10)
-```
+$$
+\begin{aligned}
+\underbrace{1 \times 28 \times 28}_{x}
+&\;\xrightarrow{\;\text{conv } 3\times3,\ 1 \to 8\;}\;
+8 \times 28 \times 28
+\;\xrightarrow{\;\text{ReLU},\ \text{maxpool } 2\;}\;
+8 \times 14 \times 14 \\[8pt]
+&\;\xrightarrow{\;\text{conv } 3\times3,\ 8 \to 16\;}\;
+16 \times 14 \times 14
+\;\xrightarrow{\;\text{ReLU},\ \text{maxpool } 2\;}\;
+16 \times 7 \times 7 \\[8pt]
+&\;\xrightarrow{\;\text{flatten}\;}\;
+784
+\;\xrightarrow{\;\text{linear}\;}\;
+\underbrace{10}_{\hat{y}}
+\end{aligned}
+$$
 
 Trained with Adam for 10 epochs at a learning rate of 10⁻³. After two pooling
 stages the tensor holds 16 × 7 × 7 = 784 values, so the final linear layer has
@@ -42,9 +64,21 @@ instead of raw pixels.
 
 ### 4. Vision Transformer
 
-```
-image → 16 patches of 7×7 → linear embed → [CLS] + positions → 2 transformer blocks → head → ŷ (10)
-```
+$$
+\begin{aligned}
+\underbrace{1 \times 28 \times 28}_{\text{image}}
+&\;\xrightarrow{\;\text{patchify } 7\times7\;}\;
+16 \times 49
+\;\xrightarrow{\;\text{linear embed}\;}\;
+16 \times 64 \\[8pt]
+&\;\xrightarrow{\;+\,[\text{CLS}],\ +\,\text{positions}\;}\;
+17 \times 64
+\;\xrightarrow{\;2 \times \text{transformer block}\;}\;
+17 \times 64 \\[8pt]
+&\;\xrightarrow{\;\text{head, on the } [\text{CLS}] \text{ row}\;}\;
+\underbrace{10}_{\hat{y}}
+\end{aligned}
+$$
 
 Width 64, 4 heads, 2 pre-norm blocks, trained with AdamW and a one-cycle
 schedule for 20 epochs. Attention is implemented from scratch rather than with
