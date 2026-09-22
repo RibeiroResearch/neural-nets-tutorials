@@ -14,15 +14,17 @@ Four tutorials, the same problem: Recognizing handwritten MNIST digits. The best
 ### 1. From scratch, in NumPy
 
 ```math
-\underbrace{784 \times 1}_{x}
-\;\xrightarrow{\;W^{[1]},\, b^{[1]}\;}\;
-10 \times 1
-\;\xrightarrow{\;\text{ReLU}\;}\;
-10 \times 1
-\;\xrightarrow{\;W^{[2]},\, b^{[2]}\;}\;
-10 \times 1
-\;\xrightarrow{\;\text{softmax}\;}\;
-\underbrace{10 \times 1}_{\hat{y}}
+\begin{array}{cl}
+784 \times 1 & x \\
+\downarrow & W^{[1]},\, b^{[1]} \\
+10 \times 1 & \\
+\downarrow & \text{ReLU} \\
+10 \times 1 & \\
+\downarrow & W^{[2]},\, b^{[2]} \\
+10 \times 1 & \\
+\downarrow & \text{softmax} \\
+10 \times 1 & \hat{y}
+\end{array}
 ```
 
 One hidden layer of 10 ReLU units and a 10-way softmax output, trained by batch
@@ -40,21 +42,21 @@ gradients derived by hand in notebook 1 against what autograd computes.
 ### 3. Convolutional network
 
 ```math
-\begin{aligned}
-\underbrace{1 \times 28 \times 28}_{x}
-&\;\xrightarrow{\;\text{conv } 3\times3,\ 1 \to 8\;}\;
-8 \times 28 \times 28
-\;\xrightarrow{\;\text{ReLU},\ \text{maxpool } 2\;}\;
-8 \times 14 \times 14 \\[8pt]
-&\;\xrightarrow{\;\text{conv } 3\times3,\ 8 \to 16\;}\;
-16 \times 14 \times 14
-\;\xrightarrow{\;\text{ReLU},\ \text{maxpool } 2\;}\;
-16 \times 7 \times 7 \\[8pt]
-&\;\xrightarrow{\;\text{flatten}\;}\;
-784
-\;\xrightarrow{\;\text{linear}\;}\;
-\underbrace{10}_{\hat{y}}
-\end{aligned}
+\begin{array}{cl}
+1 \times 28 \times 28 & x \\
+\downarrow & \text{conv } 3\times3,\ 1 \to 8 \\
+8 \times 28 \times 28 & \\
+\downarrow & \text{ReLU},\ \text{maxpool } 2 \\
+8 \times 14 \times 14 & \\
+\downarrow & \text{conv } 3\times3,\ 8 \to 16 \\
+16 \times 14 \times 14 & \\
+\downarrow & \text{ReLU},\ \text{maxpool } 2 \\
+16 \times 7 \times 7 & \\
+\downarrow & \text{flatten} \\
+784 & \\
+\downarrow & \text{linear} \\
+10 & \hat{y}
+\end{array}
 ```
 
 Trained with Adam for 10 epochs at a learning rate of 10⁻³. After two pooling
@@ -65,19 +67,19 @@ instead of raw pixels.
 ### 4. Vision Transformer
 
 ```math
-\begin{aligned}
-\underbrace{1 \times 28 \times 28}_{\text{image}}
-&\;\xrightarrow{\;\text{patchify } 7\times7\;}\;
-16 \times 49
-\;\xrightarrow{\;\text{linear embed}\;}\;
-16 \times 64 \\[8pt]
-&\;\xrightarrow{\;+\,[\text{CLS}],\ +\,\text{positions}\;}\;
-17 \times 64
-\;\xrightarrow{\;2 \times \text{transformer block}\;}\;
-17 \times 64 \\[8pt]
-&\;\xrightarrow{\;\text{head, on the } [\text{CLS}] \text{ row}\;}\;
-\underbrace{10}_{\hat{y}}
-\end{aligned}
+\begin{array}{cl}
+1 \times 28 \times 28 & \text{image} \\
+\downarrow & \text{patchify into } 16 \text{ patches of } 7\times7 \\
+16 \times 49 & \\
+\downarrow & \text{linear embed} \\
+16 \times 64 & \\
+\downarrow & \text{prepend } [\text{CLS}], \text{ add positions} \\
+17 \times 64 & \\
+\downarrow & 2 \times \text{transformer block} \\
+17 \times 64 & \\
+\downarrow & \text{head, on the } [\text{CLS}] \text{ row} \\
+10 & \hat{y}
+\end{array}
 ```
 
 Width 64, 4 heads, 2 pre-norm blocks, trained with AdamW and a one-cycle
