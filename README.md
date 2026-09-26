@@ -87,11 +87,30 @@ schedule for 20 epochs. Attention is implemented from scratch rather than with
 `nn.MultiheadAttention`, and the notebook then rebuilds the identical model from
 PyTorch's built-ins and shows the two agree.
 
+## A fifth notebook: transfer learning
+
+The four above all train from random weights on the same digits, which is what
+makes their accuracies comparable.
+[`vit_transfer_learning.ipynb`](vit_transfer_learning.ipynb) does neither, so it
+sits outside that table.
+
+It loads an ImageNet-pretrained `vit_b_16` — the notebook 4 architecture at 824
+times the size — replaces its classification head, freezes the backbone, and
+classifies 37 cat and dog breeds from **20 training images per class**. The
+comparison it runs is a pretrained backbone against a randomly initialized one,
+holding the architecture, data, head, optimizer and epochs fixed, so the gap
+between them measures what the ImageNet training bought rather than asserting
+it.
+
+Two caveats. It downloads about 1.1 GB and takes roughly twenty minutes end to
+end. And unlike the four above, it carries no stored outputs yet — you have to
+run it to see its numbers.
+
 ## The data
 
-Nothing to download. All four notebooks read `data/train.csv.gz`, which ships
-with this repository — 42,000 labelled 28×28 handwritten digits, gzipped to
-8.5 MB. `pandas` reads it compressed, so cloning is the whole setup.
+**Notebooks 1 to 4: nothing to download.** They read `data/train.csv.gz`, which
+ships with this repository — 42,000 labelled 28×28 handwritten digits, gzipped
+to 8.5 MB. `pandas` reads it compressed, so cloning is the whole setup.
 
 The loading cell checks a few other locations too: an uncompressed
 `data/train.csv`, the notebook's own folder, and Google Drive when running
@@ -100,6 +119,14 @@ inside Colab. An existing copy will be found if you have one.
 The images come from the MNIST database of handwritten digits, in the CSV
 layout Kaggle's Digit Recognizer uses — one row per image, a `label` column
 followed by `pixel0` through `pixel783`.
+
+**The transfer-learning notebook is the exception**, necessarily: reusing
+weights you did not train means fetching them. It downloads an ImageNet
+checkpoint (~330 MB, cached by `torch.hub`) and the Oxford-IIIT Pet dataset
+(~800 MB, into `data/oxford-iiit-pet/`, which is gitignored). The dataset comes
+from the fast.ai S3 mirror, which served it about twenty times faster than
+Oxford's own host when this was written; `torchvision`'s downloader stays on as
+the fallback.
 
 ## Running the notebooks
 
@@ -120,7 +147,20 @@ pip install torch
 jupyter notebook basic_neural_net_pytorch.ipynb
 ```
 
-All four run cleanly from top to bottom. The first three train in about a minute
-on a laptop CPU; `vit_pytorch.ipynb` takes a few minutes, since it runs 20
-epochs. No GPU is required, though the PyTorch notebooks will use CUDA or Apple
-silicon (MPS) automatically when one is available.
+The transfer-learning notebook also needs `torchvision`, for the pretrained
+model and the dataset:
+
+```bash
+pip install torch torchvision
+jupyter notebook vit_transfer_learning.ipynb
+```
+
+All four MNIST notebooks run cleanly from top to bottom. The first three train
+in about a minute on a laptop CPU; `vit_pytorch.ipynb` takes a few minutes,
+since it runs 20 epochs. No GPU is required, though the PyTorch notebooks will
+use CUDA or Apple silicon (MPS) automatically when one is available.
+
+`vit_transfer_learning.ipynb` is the slow one — roughly twenty minutes, most of
+it downloading. Its fine-tuning section runs only when a GPU is present; set
+`RUN_FINETUNE = False` to skip it and keep the central comparison, which trains
+on cached features in seconds.
