@@ -222,5 +222,8 @@ __marimo__/
 data/train.csv
 train.csv
 
+# Oxford-IIIT Pet, downloaded by vit_transfer_learning.ipynb (~800 MB)
+data/oxford-iiit-pet/
+
 # macOS
 .DS_Store
