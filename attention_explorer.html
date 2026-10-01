@@ -196,7 +196,12 @@ footer { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--rule);
   const T = rgb.map((c, p) => {
     const gx = p % GRID, gy = (p / GRID) | 0;
     const x = (gx / (GRID - 1)) * 2 - 1, y = (gy / (GRID - 1)) * 2 - 1;
-    return [c[0] - mean[0], c[1] - mean[1], c[2] - mean[2], x, y, x * x + y * y, 1];
+    // Centre on the image's average colour, then scale to unit length, so a
+    // dot product of two colours is a cosine: alikeness with no size term.
+    let d = [c[0] - mean[0], c[1] - mean[1], c[2] - mean[2]];
+    const n = Math.max(Math.hypot(d[0], d[1], d[2]), 1e-8);
+    d = d.map(v => v / n);
+    return [d[0], d[1], d[2], x, y, x * x + y * y, 1];
   });
 
   // ---- S matrices: one per similarity the query and key can measure -------
@@ -204,14 +209,14 @@ footer { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--rule);
   const S_COLOUR = zeros(); S_COLOUR[0][0] = S_COLOUR[1][1] = S_COLOUR[2][2] = 1;
   const S_POS = zeros(); S_POS[3][3] = S_POS[4][4] = 2; S_POS[5][6] = S_POS[6][5] = -1;
   const S_BOTH = zeros();
-  for (let i = 0; i < D; i++) for (let j = 0; j < D; j++) S_BOTH[i][j] = S_COLOUR[i][j] * 1 + S_POS[i][j] * 0.18;
+  for (let i = 0; i < D; i++) for (let j = 0; j < D; j++) S_BOTH[i][j] = S_COLOUR[i][j] * 1 + S_POS[i][j] * 0.12;
 
   const MODES = [
-    { id: "colour", label: "Colour", S: S_COLOUR, scale: -1.3,
-      note: "W<sub>q</sub> and W<sub>k</sub> both select the three colour dimensions, so S is the identity on colour and zero elsewhere. Each patch finds patches that deviate from the average colour the same way it does." },
+    { id: "colour", label: "Colour", S: S_COLOUR, scale: -1.0,
+      note: "W<sub>q</sub> and W<sub>k</sub> both select the three colour dimensions, so S is the identity on colour and zero elsewhere. Because those dimensions are unit length, a score is the cosine between two colour directions \u2014 alikeness, with no contribution from how far either sits from the average." },
     { id: "position", label: "Position", S: S_POS, scale: -0.3,
       note: "S here computes &minus;&Vert;p<sub>i</sub> &minus; p<sub>j</sub>&Vert;&sup2;, which needs the |p|&sup2; and constant features. It has a <strong>negative eigenvalue</strong>, so no single tied projection can produce it: W<sup>T</sup>W is always positive semi-definite. That is why Q and K are two matrices and not one — and the result is a neighbourhood, a convolution built out of attention." },
-    { id: "both", label: "Colour + position", S: S_BOTH, scale: -1.3,
+    { id: "both", label: "Colour + position", S: S_BOTH, scale: -1.0,
       note: "Adding the two forms gives a query that wants both: patches of a similar colour that are also nearby. One attention head, one S, two criteria." }
   ];
   // Start on the animal patch, found by colour rather than by a hardcoded index.
