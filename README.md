@@ -87,24 +87,57 @@ schedule for 20 epochs. Attention is implemented from scratch rather than with
 `nn.MultiheadAttention`, and the notebook then rebuilds the identical model from
 PyTorch's built-ins and shows the two agree.
 
-## A fifth notebook: transfer learning
+## Beyond the sequence
 
 The four above all train from random weights on the same digits, which is what
-makes their accuracies comparable.
-[`vit_transfer_learning.ipynb`](vit_transfer_learning.ipynb) does neither, so it
-sits outside that table.
+makes their accuracies comparable. Two further notebooks do neither, so they sit
+outside that table.
 
-It loads an ImageNet-pretrained `vit_b_16` — the notebook 4 architecture at 824
-times the size — replaces its classification head, freezes the backbone, and
-classifies 37 cat and dog breeds from **20 training images per class**. The
-comparison it runs is a pretrained backbone against a randomly initialized one,
-holding the architecture, data, head, optimizer and epochs fixed, so the gap
-between them measures what the ImageNet training bought rather than asserting
-it.
+### Transfer learning
 
-Two caveats. It downloads about 1.1 GB and takes roughly twenty minutes end to
-end. And unlike the four above, it carries no stored outputs yet — you have to
-run it to see its numbers.
+[`vit_transfer_learning.ipynb`](vit_transfer_learning.ipynb) loads an
+ImageNet-pretrained `vit_b_16` — the notebook 4 architecture at 824 times the
+size — replaces its classification head, freezes the backbone, and classifies 37
+cat and dog breeds from **20 training images per class**. The comparison it runs
+is a pretrained backbone against a randomly initialized one, holding the
+architecture, data, head, optimizer and epochs fixed, so the gap between them
+measures what the ImageNet training bought rather than asserting it.
+
+| | Test accuracy | Parameters trained |
+|---|---|---|
+| random backbone + linear head | 0.0886 | 28,453 |
+| pretrained backbone + linear head | **0.9092** | 28,453 |
+| pretrained, attention layers fine-tuned | 0.8930 | 28,376,869 |
+
+The third row is the one worth sitting with: a thousand times more trained
+parameters, and it finished behind the linear probe. Section 13 takes that
+apart.
+
+It downloads about 1.1 GB and takes roughly twenty minutes end to end.
+
+### Attention by hand
+
+[`attention_by_hand.ipynb`](attention_by_hand.ipynb) is a companion to notebook
+4, filling the gap between its Section 5, which derives the attention formula,
+and its Section 11, which plots a trained model's maps. **Nothing in it is
+trained.** Every projection is set by hand on tokens whose seven dimensions all
+have names, so each attention map is as interpretable as the choice that
+produced it.
+
+It answers the question the formula hides — why there are three projection
+matrices, and why $\mathbf{W}_q$ and $\mathbf{W}_k$ are two rather than one:
+
+- two different $(\mathbf{W}_q, \mathbf{W}_k)$ pairs with the same product give **bit-identical** attention, so only $\mathbf{W}_q^{\mathsf{T}}\mathbf{W}_k$ is meaningful
+- a spatial locality kernel needs an $\mathbf{S}$ with a negative eigenvalue, which no tied $\mathbf{W}^{\mathsf{T}}\mathbf{W}$ can produce — and building it yields a convolution, assembled out of attention
+- the same attention matrix carries different payloads through $\mathbf{W}_v$, and reading a constant feature returns exactly 1.0 for every query: attention averages, and cannot count
+
+Pure NumPy, no GPU, seconds to run.
+
+[`attention_explorer.html`](attention_explorer.html) is the interactive version
+of the same construction — click any patch to pick the query, switch what the
+query and key projections read, and drag the softmax scale to watch attention
+slide between a uniform average and a one-hot lookup. Open it in a browser; it
+needs no server and no Python.
 
 ## The data
 
@@ -164,3 +197,6 @@ use CUDA or Apple silicon (MPS) automatically when one is available.
 it downloading. Its fine-tuning section runs only when a GPU is present; set
 `RUN_FINETUNE = False` to skip it and keep the central comparison, which trains
 on cached features in seconds.
+
+`attention_by_hand.ipynb` needs only NumPy and matplotlib and runs in seconds.
+`attention_explorer.html` needs nothing at all — open it in a browser.
