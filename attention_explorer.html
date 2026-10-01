@@ -1,0 +1,362 @@
+<title>Attention by Hand</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an instrument panel — scene on the left, projections and readouts on the right. */
+:root {
+  --ground: #f4f2ee;
+  --panel: #ffffff;
+  --ink: #1b1d22;
+  --ink-soft: #5c6068;
+  --rule: #ddd9d2;
+  --accent: #c2410c;
+  --accent-soft: #fde6d9;
+  --pos: #0e7490;
+  --font-ui: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #15171c;
+    --panel: #1d2026;
+    --ink: #e8e6e1;
+    --ink-soft: #969ba5;
+    --rule: #2e333c;
+    --accent: #fb923c;
+    --accent-soft: #3a2415;
+    --pos: #22d3ee;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #15171c;
+  --panel: #1d2026;
+  --ink: #e8e6e1;
+  --ink-soft: #969ba5;
+  --rule: #2e333c;
+  --accent: #fb923c;
+  --accent-soft: #3a2415;
+  --pos: #22d3ee;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 56px; padding-left: 16px; padding-right: 16px; }
+
+header { border-bottom: 1px solid var(--rule); padding-bottom: 18px; margin-bottom: 24px; }
+h1 { font-size: 1.6rem; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.015em; text-wrap: balance; }
+header p { margin: 0; color: var(--ink-soft); max-width: 62ch; }
+header code { font-family: var(--font-mono); font-size: 0.92em; }
+
+.panel-grid { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 26px; align-items: start; }
+@media (max-width: 760px) { .panel-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; min-width: 0; }
+.card + .card { margin-top: 18px; }
+h2 { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-soft); margin: 0 0 12px; font-weight: 600; }
+
+.stage { position: relative; width: 100%; aspect-ratio: 1; max-width: 100%; border-radius: 6px; overflow: hidden; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+#hit { cursor: crosshair; image-rendering: auto; }
+.hint { color: var(--ink-soft); font-size: 0.84rem; margin: 10px 0 0; }
+
+.modes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.modes button {
+  font: 500 0.86rem/1 var(--font-ui); color: var(--ink); background: transparent;
+  border: 1px solid var(--rule); border-radius: 999px; padding: 8px 14px; cursor: pointer;
+}
+.modes button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.modes button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.formula { font-family: var(--font-mono); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 14px; overflow-x: auto; }
+.formula b { color: var(--accent); font-weight: 500; }
+
+label.slider { display: block; font-size: 0.84rem; color: var(--ink-soft); margin-bottom: 6px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.scalerow { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-soft); }
+
+table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.8rem; }
+th, td { text-align: right; padding: 3px 5px; font-variant-numeric: tabular-nums; }
+th { color: var(--ink-soft); font-weight: 500; }
+td.name, th.name { text-align: left; color: var(--ink-soft); }
+
+.smat { display: grid; grid-template-columns: auto repeat(7, 1fr); gap: 2px; font-family: var(--font-mono); font-size: 0.64rem; }
+.smat div { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; border-radius: 2px; }
+.smat .lab { color: var(--ink-soft); aspect-ratio: auto; font-size: 0.6rem; }
+.scroller { overflow-x: auto; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 12px; }
+.stat .k { font-size: 0.72rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; }
+.stat .v { font-family: var(--font-mono); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+
+.note { color: var(--ink-soft); font-size: 0.86rem; margin: 14px 0 0; }
+.note strong { color: var(--ink); font-weight: 600; }
+footer { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--ink-soft); font-size: 0.85rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Attention by Hand</h1>
+    <p>Nothing here is trained. Every projection is set by hand, and each patch token carries seven numbers whose meanings you can read: <code>[R, G, B, x, y, |p|&sup2;, 1]</code>. Click a patch to see where it attends.</p>
+  </header>
+
+  <div class="panel-grid">
+    <div>
+      <div class="card">
+        <h2>The scene &mdash; 8 &times; 8 patches, 64 tokens</h2>
+        <div class="stage">
+          <canvas id="scene" width="384" height="384"></canvas>
+          <canvas id="overlay" width="384" height="384"></canvas>
+          <canvas id="hit" width="384" height="384"></canvas>
+        </div>
+        <p class="hint" id="hint">Brightness shows how much the selected patch attends to each other patch.</p>
+      </div>
+
+      <div class="card">
+        <h2>Query token <span id="qid"></span></h2>
+        <div class="scroller">
+          <table id="tokrow"></table>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>What the query and key read</h2>
+        <div class="modes" id="modes"></div>
+        <p class="formula">s<sub>ij</sub> = t<sub>i</sub><sup>T</sup> <b>S</b> t<sub>j</sub>, &nbsp; <b>S</b> = W<sub>q</sub><sup>T</sup>W<sub>k</sub></p>
+        <div class="scroller"><div class="smat" id="smat"></div></div>
+        <p class="note" id="snote"></p>
+      </div>
+
+      <div class="card">
+        <h2>Scale &mdash; the softmax temperature</h2>
+        <label class="slider" for="scale">Dividing the scores by a smaller number sharpens attention.</label>
+        <input type="range" id="scale" min="-2.5" max="1.0" step="0.01" value="-1.3">
+        <div class="scalerow"><span>sharp &mdash; one-hot lookup</span><span id="scaleval"></span><span>soft &mdash; uniform average</span></div>
+        <div class="stats" style="margin-top:18px">
+          <div class="stat"><div class="k">Largest weight</div><div class="v" id="amax"></div></div>
+          <div class="stat"><div class="k">Entropy</div><div class="v" id="ent"></div></div>
+          <div class="stat"><div class="k">Row sum</div><div class="v" id="rowsum"></div></div>
+        </div>
+        <p class="note"><strong>The row always sums to one.</strong> Attention is a weighted average, never a sum, so a query with nothing relevant to look at still spends all of its weight somewhere.</p>
+      </div>
+
+      <div class="card">
+        <h2>Where this query's attention goes</h2>
+        <div class="scroller"><table id="top"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Companion to <code>attention_by_hand.ipynb</code>. The attention colouring uses the same magma scale as the notebook's figures.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const GRID = 8, N = GRID * GRID, PX = 384, PATCH = PX / GRID, D = 7;
+  const FEATURES = ["R", "G", "B", "x", "y", "|p|\u00b2", "1"];
+
+  // ---- the scene, drawn once, then averaged into tokens -------------------
+  const scene = document.getElementById("scene"), sctx = scene.getContext("2d", { willReadFrequently: true });
+  function paintScene() {
+    sctx.fillStyle = "#8ec5e8"; sctx.fillRect(0, 0, PX, PX * 0.45);
+    sctx.fillStyle = "#7fa650"; sctx.fillRect(0, PX * 0.45, PX, PX * 0.55);
+    const blob = (cx, cy, r, c) => { sctx.fillStyle = c; sctx.beginPath(); sctx.arc(cx, cy, r, 0, 7); sctx.fill(); };
+    blob(0.25 * PX, 0.60 * PX, 0.11 * PX, "#8b5a2b");
+    blob(0.62 * PX, 0.70 * PX, 0.13 * PX, "#8b5a2b");
+    blob(0.82 * PX, 0.84 * PX, 0.14 * PX, "#c0392b");
+  }
+  paintScene();
+
+  const rgb = [];                       // mean colour per patch, 0..1
+  (function tokenizeColour() {
+    const d = sctx.getImageData(0, 0, PX, PX).data;
+    for (let p = 0; p < N; p++) {
+      const gx = p % GRID, gy = (p / GRID) | 0;
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let y = gy * PATCH; y < (gy + 1) * PATCH; y++)
+        for (let x = gx * PATCH; x < (gx + 1) * PATCH; x++) {
+          const i = 4 * (y * PX + x); r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+        }
+      rgb.push([r / n / 255, g / n / 255, b / n / 255]);
+    }
+  })();
+
+  const mean = [0, 1, 2].map(c => rgb.reduce((s, v) => s + v[c], 0) / N);
+  const T = rgb.map((c, p) => {
+    const gx = p % GRID, gy = (p / GRID) | 0;
+    const x = (gx / (GRID - 1)) * 2 - 1, y = (gy / (GRID - 1)) * 2 - 1;
+    return [c[0] - mean[0], c[1] - mean[1], c[2] - mean[2], x, y, x * x + y * y, 1];
+  });
+
+  // ---- S matrices: one per similarity the query and key can measure -------
+  const zeros = () => Array.from({ length: D }, () => new Array(D).fill(0));
+  const S_COLOUR = zeros(); S_COLOUR[0][0] = S_COLOUR[1][1] = S_COLOUR[2][2] = 1;
+  const S_POS = zeros(); S_POS[3][3] = S_POS[4][4] = 2; S_POS[5][6] = S_POS[6][5] = -1;
+  const S_BOTH = zeros();
+  for (let i = 0; i < D; i++) for (let j = 0; j < D; j++) S_BOTH[i][j] = S_COLOUR[i][j] * 1 + S_POS[i][j] * 0.18;
+
+  const MODES = [
+    { id: "colour", label: "Colour", S: S_COLOUR, scale: -1.3,
+      note: "W<sub>q</sub> and W<sub>k</sub> both select the three colour dimensions, so S is the identity on colour and zero elsewhere. Each patch finds patches that deviate from the average colour the same way it does." },
+    { id: "position", label: "Position", S: S_POS, scale: -0.3,
+      note: "S here computes &minus;&Vert;p<sub>i</sub> &minus; p<sub>j</sub>&Vert;&sup2;, which needs the |p|&sup2; and constant features. It has a <strong>negative eigenvalue</strong>, so no single tied projection can produce it: W<sup>T</sup>W is always positive semi-definite. That is why Q and K are two matrices and not one — and the result is a neighbourhood, a convolution built out of attention." },
+    { id: "both", label: "Colour + position", S: S_BOTH, scale: -1.3,
+      note: "Adding the two forms gives a query that wants both: patches of a similar colour that are also nearby. One attention head, one S, two criteria." }
+  ];
+  // Start on the animal patch, found by colour rather than by a hardcoded index.
+  const nearest = hex => {
+    const tgt = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+    let best = 0, bd = Infinity;
+    rgb.forEach((c, i) => {
+      const d = Math.hypot(c[0] - tgt[0], c[1] - tgt[1], c[2] - tgt[2]);
+      if (d < bd) { bd = d; best = i; }
+    });
+    return best;
+  };
+  let mode = MODES[0], query = nearest("#8b5a2b"), logScale = MODES[0].scale;
+
+  // ---- attention ---------------------------------------------------------
+  function scoreRow(i, S) {
+    const t = T[i], out = new Array(N);
+    const tS = new Array(D).fill(0);
+    for (let a = 0; a < D; a++) { let s = 0; for (let b = 0; b < D; b++) s += t[b] * S[b][a]; tS[a] = s; }
+    for (let j = 0; j < N; j++) { let s = 0; for (let a = 0; a < D; a++) s += tS[a] * T[j][a]; out[j] = s; }
+    return out;
+  }
+  function attentionRow(i, S, scale) {
+    const s = scoreRow(i, S).map(v => v / scale);
+    const m = Math.max(...s);
+    const e = s.map(v => Math.exp(v - m));
+    const z = e.reduce((a, b) => a + b, 0);
+    return e.map(v => v / z);
+  }
+
+  // magma, matching the notebook's colormap
+  const MAGMA = [[0,0,4],[40,11,84],[101,21,110],[159,42,99],[212,72,66],[245,125,21],[252,193,58],[252,253,191]];
+  function magma(t) {
+    t = Math.max(0, Math.min(1, t));
+    const f = t * (MAGMA.length - 1), i = Math.min(MAGMA.length - 2, Math.floor(f)), u = f - i;
+    const a = MAGMA[i], b = MAGMA[i + 1];
+    return [0, 1, 2].map(k => Math.round(a[k] + u * (b[k] - a[k])));
+  }
+
+  // ---- drawing -----------------------------------------------------------
+  const octx = document.getElementById("overlay").getContext("2d");
+  const hctx = document.getElementById("hit").getContext("2d");
+
+  function draw(A) {
+    const peak = Math.max(...A);
+    octx.clearRect(0, 0, PX, PX);
+    for (let p = 0; p < N; p++) {
+      const t = A[p] / peak;
+      const [r, g, b] = magma(t);
+      octx.fillStyle = `rgba(${r},${g},${b},${(0.9 * Math.pow(t, 0.8)).toFixed(3)})`;
+      octx.fillRect((p % GRID) * PATCH, ((p / GRID) | 0) * PATCH, PATCH, PATCH);
+    }
+    hctx.clearRect(0, 0, PX, PX);
+    hctx.strokeStyle = "rgba(255,255,255,0.22)"; hctx.lineWidth = 1;
+    for (let k = 1; k < GRID; k++) {
+      hctx.beginPath(); hctx.moveTo(k * PATCH, 0); hctx.lineTo(k * PATCH, PX); hctx.stroke();
+      hctx.beginPath(); hctx.moveTo(0, k * PATCH); hctx.lineTo(PX, k * PATCH); hctx.stroke();
+    }
+    const gx = query % GRID, gy = (query / GRID) | 0;
+    hctx.strokeStyle = getComputedStyle(document.body).getPropertyValue("--accent").trim() || "#c2410c";
+    hctx.lineWidth = 3;
+    hctx.strokeRect(gx * PATCH + 1.5, gy * PATCH + 1.5, PATCH - 3, PATCH - 3);
+  }
+
+  function renderS(S) {
+    const host = document.getElementById("smat");
+    host.innerHTML = "";
+    const corner = document.createElement("div"); corner.className = "lab"; host.appendChild(corner);
+    FEATURES.forEach(f => { const d = document.createElement("div"); d.className = "lab"; d.textContent = f; host.appendChild(d); });
+    const peak = Math.max(1e-9, ...S.flat().map(Math.abs));
+    for (let i = 0; i < D; i++) {
+      const lab = document.createElement("div"); lab.className = "lab"; lab.textContent = FEATURES[i]; host.appendChild(lab);
+      for (let j = 0; j < D; j++) {
+        const v = S[i][j], d = document.createElement("div");
+        const mag = Math.abs(v) / peak;
+        d.style.background = v === 0 ? "transparent"
+          : v > 0 ? `color-mix(in srgb, var(--accent) ${Math.round(mag * 78)}%, transparent)`
+                  : `color-mix(in srgb, var(--pos) ${Math.round(mag * 78)}%, transparent)`;
+        d.style.border = "1px solid var(--rule)";
+        d.textContent = v === 0 ? "" : (Number.isInteger(v) ? v : v.toFixed(2));
+        host.appendChild(d);
+      }
+    }
+  }
+
+  function table(host, rows, head) {
+    const t = document.getElementById(host);
+    t.innerHTML = "<tr>" + head.map((h, i) => `<th class="${i === 0 ? "name" : ""}">${h}</th>`).join("") + "</tr>"
+      + rows.map(r => "<tr>" + r.map((c, i) => `<td class="${i === 0 ? "name" : ""}">${c}</td>`).join("") + "</tr>").join("");
+  }
+
+  function update() {
+    const scale = Math.pow(10, logScale);
+    const A = attentionRow(query, mode.S, scale);
+    draw(A);
+    renderS(mode.S);
+    document.getElementById("snote").innerHTML = mode.note;
+    document.getElementById("qid").textContent = `#${query}  (row ${(query / GRID) | 0}, col ${query % GRID})`;
+    table("tokrow", [T[query].map(v => v.toFixed(2))], FEATURES);
+
+    const peak = Math.max(...A);
+    const ent = -A.reduce((s, a) => s + (a > 0 ? a * Math.log(a) : 0), 0) / Math.log(N);
+    document.getElementById("amax").textContent = peak.toFixed(3);
+    document.getElementById("ent").textContent = ent.toFixed(3);
+    document.getElementById("rowsum").textContent = A.reduce((a, b) => a + b, 0).toFixed(3);
+    document.getElementById("scaleval").textContent = scale.toFixed(3);
+
+    const order = A.map((a, i) => [a, i]).sort((x, y) => y[0] - x[0]).slice(0, 6);
+    table("top", order.map(([a, i]) => {
+      const c = rgb[i].map(v => Math.round(v * 255));
+      return [`patch ${i}${i === query ? " (itself)" : ""}`,
+              `<span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:rgb(${c})"></span>`,
+              a.toFixed(3), (100 * a / peak).toFixed(0) + "%"];
+    }), ["Patch", "", "Weight", "of peak"]);
+  }
+
+  // ---- controls ----------------------------------------------------------
+  const modeHost = document.getElementById("modes");
+  MODES.forEach(m => {
+    const b = document.createElement("button");
+    b.textContent = m.label; b.id = "mode-" + m.id; b.setAttribute("aria-pressed", String(m === mode));
+    b.addEventListener("click", () => {
+      mode = m; logScale = m.scale;
+      document.getElementById("scale").value = String(logScale);
+      MODES.forEach(o => document.getElementById("mode-" + o.id).setAttribute("aria-pressed", String(o === m)));
+      update();
+    });
+    modeHost.appendChild(b);
+  });
+
+  const slider = document.getElementById("scale");
+  slider.addEventListener("input", e => { logScale = parseFloat(e.target.value); update(); });
+
+  const hit = document.getElementById("hit");
+  function pick(ev) {
+    const r = hit.getBoundingClientRect();
+    const p = ev.touches ? ev.touches[0] : ev;
+    const gx = Math.floor(((p.clientX - r.left) / r.width) * GRID);
+    const gy = Math.floor(((p.clientY - r.top) / r.height) * GRID);
+    if (gx >= 0 && gx < GRID && gy >= 0 && gy < GRID) { query = gy * GRID + gx; update(); }
+  }
+  hit.addEventListener("click", pick);
+  hit.addEventListener("touchstart", e => { e.preventDefault(); pick(e); }, { passive: false });
+
+  slider.value = String(logScale);
+  update();
+})();
+</script>
