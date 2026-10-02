@@ -121,14 +121,14 @@ It downloads about 1.1 GB and takes roughly twenty minutes end to end.
 4, filling the gap between its Section 5, which derives the attention formula,
 and its Section 11, which plots a trained model's maps. **Nothing in it is
 trained.** Every projection is set by hand, on tokens whose seven dimensions all
-have names — mean colour, grid position, squared radius, and a constant — so
+have names — mean color, grid position, squared radius, and a constant — so
 each attention map is as interpretable as the choice that produced it.
 
-The colour dimensions are centred on the image's average and then scaled to unit
+The color dimensions are centered on the image's average and then scaled to unit
 length, which makes a query–key dot product a plain cosine: how alike two
-departures from the average colour are, with no contribution from how large
+departures from the average color are, with no contribution from how large
 either departure is. Selecting just those three dimensions in $\mathbf{W}_q$ and
-$\mathbf{W}_k$ is enough to make patches attend to same-coloured patches — 68% of
+$\mathbf{W}_k$ is enough to make patches attend to same-colored patches — 68% of
 attention mass, against 27% for uniform attention, with nothing learned.
 
 It answers the question the formula hides — why there are three projection
@@ -149,7 +149,7 @@ needs no server and no Python.
 ## The data
 
 **Notebooks 1 to 4: nothing to download.** They read `data/train.csv.gz`, which
-ships with this repository — 42,000 labelled 28×28 handwritten digits, gzipped
+ships with this repository — 42,000 labeled 28×28 handwritten digits, gzipped
 to 8.5 MB. `pandas` reads it compressed, so cloning is the whole setup.
 
 The loading cell checks a few other locations too: an uncompressed
